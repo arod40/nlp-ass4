@@ -10,11 +10,9 @@ Pencheng Yin <pcyin@cs.cmu.edu>
 Sahil Chopra <schopra8@stanford.edu>
 Vera Lin <veralin@stanford.edu>
 """
-from audioop import bias
 from collections import namedtuple
 import sys
 from typing import List, Tuple, Dict, Set, Union
-from unicodedata import bidirectional
 import torch
 import torch.nn as nn
 import torch.nn.utils
@@ -88,7 +86,7 @@ class NMT(nn.Module):
         self.att_projection = nn.Linear(2*hidden_size, hidden_size, bias=False)
         self.combined_output_projection = nn.Linear(3*hidden_size, hidden_size, bias=False)
         self.target_vocab_projection = nn.Linear(hidden_size, len(vocab.tgt), bias=False)
-        self.dropout = nn.Dropout(p=0.5)
+        self.dropout = nn.Dropout(p=dropout_rate)
 
 
         ### END YOUR CODE
@@ -180,8 +178,14 @@ class NMT(nn.Module):
         ###     Tensor Permute:
         ###         https://pytorch.org/docs/stable/tensors.html#torch.Tensor.permute
 
-
-
+        X = pack_padded_sequence(self.model_embeddings(source_padded), source_lengths).data
+        enc_hiddens, (last_hidden, last_cell) = self.encoder(X)
+        enc_hiddens = pad_packed_sequence(enc_hiddens, padding_value=self.vocab.tgt["<pad>"])[0].permute((1,0,2))
+        last_hidden = torch.cat((last_hidden[0,:,:], last_hidden[1,:,:]), dim=1)
+        last_cell = torch.cat((last_cell[0,:,:], last_cell[1,:,:]), dim=1)
+        init_decoder_hidden = self.h_projection(last_hidden)
+        init_decoder_cell = self.c_projection(last_cell)
+        dec_init_state = (init_decoder_hidden, init_decoder_cell)
 
         ### END YOUR CODE
 
