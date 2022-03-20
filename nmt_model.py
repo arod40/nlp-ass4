@@ -178,7 +178,7 @@ class NMT(nn.Module):
         ###     Tensor Permute:
         ###         https://pytorch.org/docs/stable/tensors.html#torch.Tensor.permute
 
-        X = pack_padded_sequence(self.model_embeddings(source_padded), source_lengths).data
+        X = pack_padded_sequence(self.model_embeddings.source(source_padded), source_lengths)
         enc_hiddens, (last_hidden, last_cell) = self.encoder(X)
         enc_hiddens = pad_packed_sequence(enc_hiddens, padding_value=self.vocab.tgt["<pad>"])[0].permute((1,0,2))
         last_hidden = torch.cat((last_hidden[0,:,:], last_hidden[1,:,:]), dim=1)
